@@ -6,6 +6,7 @@ type CellColor = "green-500" | "yellow-500" | "gray-200"
 type Cell = {
   letter: string;
   color: CellColor;
+  pendingColor?: CellColor;
 }
 
 
@@ -21,12 +22,14 @@ export default function GameBoard() {
     letter: l,
     color: "text-black"})));
   const keyboardRows = [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['Enter', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Backspace']
+    ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+  ['delete', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'enter']
   ]
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(false);
+  const [animatingRow, setAnimatingRow] = useState<number | null>(null);
+
   
 
   useEffect(() => {
@@ -54,7 +57,7 @@ export default function GameBoard() {
       inputValue.split("").forEach((newLetter, index) => {
         newBoard[index + position] = {
           ...newBoard[index + position],
-          letter: newLetter
+          letter: newLetter,  
         };
       });
 
@@ -64,7 +67,6 @@ export default function GameBoard() {
           letter: ""
         }
       }
-  
       return newBoard;
     });
   }, [inputValue, position, rowLength, gameOver]);
@@ -94,7 +96,7 @@ export default function GameBoard() {
           newBoard[index + position] = {
             ...newBoard[index + position],
             letter,
-            color: "green-500"
+            pendingColor: "green-500"
           };
           randomWordArray[index] = "";
         }
@@ -108,7 +110,7 @@ export default function GameBoard() {
           newBoard[index + position] = {
             ...newBoard[index + position],
             letter,
-            color: "yellow-500"
+            pendingColor: "yellow-500"
           };
           randomWordArray[randomWordArray.indexOf(letter)] = "";
         }
@@ -126,10 +128,22 @@ export default function GameBoard() {
           return l;
         })
       );
-
+      setTimeout(() => {
+        setBoard(prev =>
+          prev.map(cell =>
+            cell.pendingColor
+              ? { ...cell, color: cell.pendingColor, pendingColor: undefined }
+              : cell
+          )
+        );
+      }, 300);
       return newBoard;
     });
+
+    setAnimatingRow(turn - 1);
+    setTimeout(() => setAnimatingRow(null), rowLength * 250 + 600)
     setInputValue("")
+
     if (!isWinner && !isLastTurn) {
       setTurn(turn + 1)
     }
@@ -154,7 +168,8 @@ export default function GameBoard() {
           return (
             <div
             key={index}
-            className={`bg-${cell.color} border border-black w-[15vw] max-w-[70px] aspect-square text-5xl flex items-center justify-center rounded-lg`}
+            style = {{animationDelay: `${(index % rowLength) * .25}s`}}
+            className={`border border-black w-[15vw] max-w-[70px] aspect-square text-5xl flex items-center justify-center rounded-lg ${animatingRow === Math.floor(index / rowLength) ? "animate-rotate" : ""} bg-${cell.color}`}
           >
             {cell.letter.toUpperCase()}
           </div>
@@ -192,13 +207,34 @@ export default function GameBoard() {
               {row.map(letter => {
                 const letterObj = availableLetters.find(l => l.letter === letter);
 
+                const handleClick = () => {
+                  if (letter === "enter") {
+                    validateLetters();
+                  }
+
+                  else if (letter === "delete") {
+                    setInputValue(prev => prev.slice(0, -1))
+                  }
+
+                  else {
+                    setInputValue(prev => prev.length < rowLength ? prev + letter.toLowerCase() : prev)
+                  }
+                }
+
                 return (
                   <button
                     key={letter}
                     value={letter}
-                    onClick={() => setInputValue(prev => prev + letter)}
-                    disabled={inputValue.length >= rowLength || gameOver}
-                    className={`w-7 aspect-[2/3] border border-black rounded-lg shadow-xl m-1 ${letterObj?.color || ''}`}
+                    onClick={handleClick}
+                    disabled={gameOver || (
+                      letter !== "enter" &&
+                      letter !== "delete" && 
+                      inputValue.length >= rowLength
+                    )}
+                    className={(letter === "enter" || letter === "delete")
+                      ? `px-2 border border-black rounded-lg shadow-xl m-1 ${letterObj?.color || ''}`
+                      : `w-7 aspect-[2/3] border border-black rounded-lg shadow-xl m-1 ${letterObj?.color || ''}`
+                    }
                   >
                     {letter.toUpperCase()}
                   </button>
