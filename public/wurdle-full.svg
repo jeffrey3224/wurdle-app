@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120.11 40.12">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #22c55e;
+        stroke: #1a1a1a;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+
+      .cls-2 {
+        stroke-width: 0px;
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        fill: #000;
+      }
+
+      .cls-3 {
+        font-size: 33px;
+      }
+
+      .cls-3, .cls-4 {
+        font-family: MyriadPro-Semibold, 'Myriad Pro';
+        font-weight: 600;
+      }
+
+      .cls-4 {
+        font-size: 26px;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <text class="cls-4" transform="translate(40.73 31.27)"><tspan x="0" y="0">URDLE</tspan></text>
+      <rect class="cls-1" x="1" y="1" width="38.11" height="38.11" rx="4.3" ry="4.3"/>
+      <text class="cls-3" transform="translate(5.72 31.87)"><tspan x="0" y="0">W</tspan></text>
+      <rect class="cls-2" x="42.55" y="32.48" width="73.29" height="2.63"/>
+    </g>
+  </g>
+</svg>

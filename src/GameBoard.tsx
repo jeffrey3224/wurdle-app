@@ -1,7 +1,9 @@
 import { generate } from "random-words";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { FaDeleteLeft } from "react-icons/fa6";
+import { AiOutlineEnter } from "react-icons/ai";
 
-type CellColor = "green-500" | "yellow-500" | "gray-200"
+type CellColor = "bg-green-500" | "bg-yellow-500" | "gray-200" | "zinc-800"
 
 type Cell = {
   letter: string;
@@ -9,6 +11,12 @@ type Cell = {
   pendingColor?: CellColor;
 }
 
+const colorMap: Record<CellColor, string>={
+  "bg-green-500": "bg-green-500",
+  "bg-yellow-500": "bg-yellow-500",
+  "gray-200": "bg-gray-200",
+  "zinc-800": "bg-zinc-800 text-white",
+}
 
 export default function GameBoard() {
   const [rowLength, setRowLength] = useState<number>(5)
@@ -23,14 +31,12 @@ export default function GameBoard() {
     color: "text-black"})));
   const keyboardRows = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-  ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-  ['delete', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'enter']
+    ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+    ['enter', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'delete']
   ]
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(false);
   const [animatingRow, setAnimatingRow] = useState<number | null>(null);
-
-  
 
   useEffect(() => {
     const newWord = generate({ minLength: rowLength, maxLength: rowLength });
@@ -40,7 +46,6 @@ export default function GameBoard() {
       setRandomWord(newWord);
     }
   }, [rowLength]);
-
 
   useEffect(() => {
     setBoard(Array.from({ length: 5 * rowLength }, () => ({ letter: "", color: "gray-200" })));
@@ -70,155 +75,189 @@ export default function GameBoard() {
       return newBoard;
     });
   }, [inputValue, position, rowLength, gameOver]);
-  
 
-  const validateLetters = () => {
-    if (inputValue.length !== rowLength) {
-      alert(`Please enter a guess that has ${rowLength} characters.`)
-      return 
-    }
-
+  const validateLetters = useCallback(() => {
+    if (inputValue.length !== rowLength) return alert(`Please enter a word with ${rowLength} letters`);
     if (!randomWord) return;
-
-    const isWinner = inputValue === randomWord;
+  
+    const isWinner = inputValue.toUpperCase() === randomWord.toUpperCase();
     const isLastTurn = turn === 5;
+  
+    if (isWinner) setWinner(true);
+    if (isWinner || isLastTurn) setGameOver(true);
 
-    if (isWinner) setWinner(true)
-    if (isWinner || isLastTurn) setGameOver(true)
-
+    const inputLetters = inputValue.toUpperCase().split("");
+    const targetLetters = randomWord.toUpperCase().split("");
+  
     setBoard(prevBoard => {
       const newBoard = [...prevBoard];
-      const randomWordArray = [...randomWord]
-  
-      {/* Checks if letter at index is a match*/}
-      inputValue.split("").forEach((letter, index) => {
-        if (letter === randomWordArray[index]) {
-          newBoard[index + position] = {
-            ...newBoard[index + position],
-            letter,
-            pendingColor: "green-500"
-          };
-          randomWordArray[index] = "";
+      const tempTarget = [...targetLetters];
+
+      // green letters
+      inputLetters.forEach((letter, index) => {
+        const pos = position + index;
+        if (letter === tempTarget[index]) {
+          newBoard[pos] = { ...newBoard[pos], pendingColor: "bg-green-500" };
+          tempTarget[index] = "";
         }
       });
 
-        {/* if not a match, checks if included */}
-       inputValue.split("").forEach((letter, index) => {
-        if (
-          letter !== randomWord[index] && randomWordArray.includes(letter)
-        ) {
-          newBoard[index + position] = {
-            ...newBoard[index + position],
-            letter,
-            pendingColor: "yellow-500"
-          };
-          randomWordArray[randomWordArray.indexOf(letter)] = "";
+      // yellow letters
+      inputLetters.forEach((letter, index) => {
+        const pos = position + index;
+        if (!newBoard[pos].pendingColor && tempTarget.includes(letter)) {
+          newBoard[pos] = { ...newBoard[pos], pendingColor: "bg-yellow-500" };
+          tempTarget[tempTarget.indexOf(letter)] = "";
         }
-       })
+      });
 
-       setAvailableLetters(prev =>
-        prev.map(l => {
-          if (inputValue.split("").some((letter, index) => letter === randomWord![index] && letter === l.letter)) {
-            return { ...l, color: "bg-green-500" };
-          } else if (inputValue.includes(l.letter) && randomWord!.includes(l.letter)) {
-            return { ...l, color: "bg-yellow-500" };
-          } else if (inputValue.includes(l.letter)) {
-            return { ...l, color: "line-through bg-gray-500" };
-          }
-          return l;
-        })
-      );
+      // gray letters
+      inputLetters.forEach((letter, index) => {
+        const pos = position + index;
+        if (!newBoard[pos].pendingColor) {
+          newBoard[pos] = { ...newBoard[pos], pendingColor: "zinc-800" };
+        }
+      });
+
+      return newBoard;
+    });
+
+    // update keyboard
+    setAvailableLetters(prev =>
+      prev.map(l => {
+        const upperL = l.letter.toUpperCase();
+        if (inputLetters.some((letter, idx) => letter === targetLetters[idx] && letter === upperL)) {
+          return { ...l, color: "bg-green-500" };
+        } else if (inputLetters.includes(upperL) && targetLetters.includes(upperL)) {
+          return { ...l, color: "bg-yellow-500" };
+        } else if (inputLetters.includes(upperL)) {
+          return { ...l, color: "bg-zinc-800 text-white" };
+        }
+        return l;
+      })
+    );
+
+    // animation indexing
+    inputLetters.forEach((_, i) => {
+      const revealIndex = position + i;
       setTimeout(() => {
         setBoard(prev =>
-          prev.map(cell =>
-            cell.pendingColor
+          prev.map((cell, idx) =>
+            idx === revealIndex && cell.pendingColor
               ? { ...cell, color: cell.pendingColor, pendingColor: undefined }
               : cell
           )
         );
-      }, 300);
-      return newBoard;
+      }, i * 200 + 200);
     });
 
     setAnimatingRow(turn - 1);
-    setTimeout(() => setAnimatingRow(null), rowLength * 250 + 600)
-    setInputValue("")
+    setTimeout(() => setAnimatingRow(null), rowLength * 300 + 100);
+    setInputValue("");
 
-    if (!isWinner && !isLastTurn) {
-      setTurn(turn + 1)
-    }
-  };
+    if (!isWinner && !isLastTurn) setTurn(turn + 1);
+  }, [inputValue, position, randomWord, turn, rowLength]);
+
+  useEffect(() => {
+    const handleKeys = (e: KeyboardEvent) => {
+      if (gameOver) return;
+      const key = e.key;
   
+      if (/^[a-zA-Z]$/.test(key)) {
+        setInputValue(prev => (prev.length < rowLength ? prev + key.toUpperCase() : prev));
+      } else if (key === "Backspace") {
+        setInputValue(prev => prev.slice(0, -1));
+      } else if (key === "Enter") {
+        validateLetters();
+      }
+    };
+  
+    window.addEventListener("keydown", handleKeys);
+    return () => window.removeEventListener("keydown", handleKeys);
+  }, [validateLetters, rowLength, gameOver]);
+
+  const handleReset = () => {
+    setGameOver(false);
+    setRowLength(5);
+    setInputValue("");
+    setWinner(false);
+    setTurn(1)
+    setBoard(Array.from({ length: 5 * rowLength }, () => ({ letter: "", color: "gray-200" })))
+    availableLetters.map((letter) => {
+      letter.color = ""
+    })
+  }
+
   return (
     <main>
-      <input 
-        type="number"
-        value={rowLength}
-        min={3}
-        max={7}
-        disabled={gameOver}
-        onChange={e=>setRowLength(Number(e.target.value))}
-        className="border-2 border-black"
-      />
-      {`turn: ${turn} / 5`}
-      <div className="flex flex-row justify-center">
-        <div className="grid gap-2"
-        style={{ gridTemplateColumns: `repeat(${rowLength}, minmax(0, 1fr))` }}>
-        {board.map((cell, index) => {
-          return (
-            <div
-            key={index}
-            style = {{animationDelay: `${(index % rowLength) * .25}s`}}
-            className={`border border-black w-[15vw] max-w-[70px] aspect-square text-5xl flex items-center justify-center rounded-lg ${animatingRow === Math.floor(index / rowLength) ? "animate-rotate" : ""} bg-${cell.color}`}
-          >
-            {cell.letter.toUpperCase()}
-          </div>
-          )
-        })}
+      <div className={`w-full h-[100vh] flex flex-col items-center justify-center space-y-2 absolute text-white text-4xl font-bold z-50 ${gameOver ? "final-overlay" : "opacity-0"}`}>
+          {gameOver 
+            ? winner 
+              ? <div>You win!</div>
+              : <div>Game Over. The word was {randomWord}.</div> 
+            : ""}
+          <button onClick = {handleReset} className="border-2 border-white px-4 py-1 rounded-xl text-2xl cursor-pointer">Replay</button>
+      </div>
+      <div className="bg-zinc-800 w-full h-20 p-2 flex items-center justify-center">
+        <img src="/wurdle-mixed.svg" className="w-35 mx-auto"/>
+      </div>
+      <div className="max-w-[800px] mx-auto px-2">
+        <div className="flex flex-row items-center mt-2">
+          <h1 className="pr-2">Word Length: </h1>
+          <select 
+            value={rowLength}
+            defaultValue={5}
+            disabled={gameOver}
+            onChange={e=>setRowLength(Number(e.target.value))}>
+            <option 
+              value={3}>3
+            </option>
+            <option
+              value={4}>4
+            </option>
+            <option 
+              value={5}>5
+            </option>
+            <option
+              value={6}>6
+            </option>
+            <option
+              value={7}>7
+            </option>
+          </select>
+          
         </div>
-      </div>
-      <div className="flex flex-col items-center space-y-2 my-5">
-        <input 
-          type="text"
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value)
-          }}
-          className="border-black border w-[30vw] rounded-lg"
-          autoFocus
-          disabled={gameOver}
-          maxLength={rowLength}
-        />
-        <button onClick={validateLetters} className="bg-black text-white rounded-lg p-1 w-[100px]">
-          Check
-        </button>
-      </div>
-      
-      <div>
-        {gameOver 
-        ? winner 
-        ? <div>You win!</div>
-        : <div>Game Over. The word was {randomWord}.</div> 
-        : ""}
-      </div>
-      <div className="flex flex-col items-center">
+        {`Turn: ${turn} / 5`}
+        <div className="flex flex-row justify-center mt-5">
+          <div className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${rowLength}, minmax(0, 1fr))` }}>
+            {board.map((cell, index) => {
+              const cellWidth = `${Math.min(13, 100 / randomWord.length)}vw`;
+
+              return (
+              <div
+                key={index}
+                style = {{animationDelay: `${(index % rowLength) * .2}s`, width: cellWidth}}
+                className={`border border-black w-${cellWidth} max-w-[70px] aspect-square text-4xl font-semibold flex items-center justify-center rounded-lg
+                  ${animatingRow === Math.floor(index / rowLength) ? "animate-rotate" : ""}
+                  ${colorMap[cell.color]}`}
+              >
+                {cell.letter.toUpperCase()}
+              </div>)
+})}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center mt-10">
           {keyboardRows.map((row, rowIndex) => (
             <div key={rowIndex} className="flex">
               {row.map(letter => {
                 const letterObj = availableLetters.find(l => l.letter === letter);
 
                 const handleClick = () => {
-                  if (letter === "enter") {
-                    validateLetters();
-                  }
-
-                  else if (letter === "delete") {
-                    setInputValue(prev => prev.slice(0, -1))
-                  }
-
-                  else {
-                    setInputValue(prev => prev.length < rowLength ? prev + letter.toLowerCase() : prev)
-                  }
+                  if (letter === "enter") validateLetters();
+                  else if (letter === "delete") setInputValue(prev => prev.slice(0, -1));
+                  else setInputValue(prev => prev.length < rowLength ? prev + letter.toUpperCase() : prev);
                 }
 
                 return (
@@ -226,23 +265,18 @@ export default function GameBoard() {
                     key={letter}
                     value={letter}
                     onClick={handleClick}
-                    disabled={gameOver || (
-                      letter !== "enter" &&
-                      letter !== "delete" && 
-                      inputValue.length >= rowLength
-                    )}
-                    className={(letter === "enter" || letter === "delete")
-                      ? `px-2 border border-black rounded-lg shadow-xl m-1 ${letterObj?.color || ''}`
-                      : `w-7 aspect-[2/3] border border-black rounded-lg shadow-xl m-1 ${letterObj?.color || ''}`
+                    disabled={gameOver || (letter !== "enter" && letter !== "delete" && inputValue.length >= rowLength)}
+                    className={`w-[8vw] max-w-[45px] aspect-[2/3] border border-black rounded-lg shadow-xl m-[3px] py-2 flex items-center justify-center ${letterObj?.color || ''}`
                     }
                   >
-                    {letter.toUpperCase()}
+                    {letter === "delete" ? <FaDeleteLeft size={16} /> : letter === "enter" ? <AiOutlineEnter size={16} /> : letter.toUpperCase()}
                   </button>
                 );
               })}
             </div>
           ))}
         </div>
+      </div>
     </main>
   )
 }

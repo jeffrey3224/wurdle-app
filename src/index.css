@@ -2,7 +2,7 @@
 
 
 .animate-rotate {
-  animation: animate-rotate 0.5s ease-in-out forwards
+  animation: animate-rotate 0.6s ease-in-out forwards
 }
 
 @keyframes animate-rotate {
@@ -17,4 +17,24 @@
   100% {
     transform: rotateY(0deg);
   }
+}
+
+.final-overlay {
+  animation: final-overlay 1s ease-in-out forwards;
+  animation-delay: 1s;
+  top: -100%;
+  background-color: rgba(0,0,0,0.8);
+}
+
+@keyframes final-overlay {
+
+  0% {
+    top: -100%;
+    opacity: 0;
+  }
+  100% {
+    top: 0;
+    opacity: 1;
+  }
+
 }
