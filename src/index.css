@@ -1,5 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&display=swap");
 @import "tailwindcss";
 
+
+body {
+  font-family: 'Baloo 2';
+}
 
 .animate-rotate {
   animation: animate-rotate 0.6s ease-in-out forwards
@@ -7,15 +12,15 @@
 
 @keyframes animate-rotate {
   0% {
-    transform: rotateY(0deg);
+    transform: rotateX(0deg);
   }
 
   50% {
-    transform: rotateY(90deg)
+    transform: rotateX(90deg)
   }
 
   100% {
-    transform: rotateY(0deg);
+    transform: rotateX(0deg);
   }
 }
 

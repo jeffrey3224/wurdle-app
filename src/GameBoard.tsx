@@ -2,6 +2,7 @@ import { generate } from "random-words";
 import { useEffect, useState, useCallback } from "react";
 import { FaDeleteLeft } from "react-icons/fa6";
 import { AiOutlineEnter } from "react-icons/ai";
+import { Flip, ToastContainer, toast } from "react-toastify";
 
 type CellColor = "bg-green-500" | "bg-yellow-500" | "gray-200" | "zinc-800"
 
@@ -77,7 +78,8 @@ export default function GameBoard() {
   }, [inputValue, position, rowLength, gameOver]);
 
   const validateLetters = useCallback(() => {
-    if (inputValue.length !== rowLength) return alert(`Please enter a word with ${rowLength} letters`);
+    if (inputValue.length !== rowLength) 
+      return toast(`Please enter a word with ${rowLength} letters.`);
     if (!randomWord) return;
   
     const isWinner = inputValue.toUpperCase() === randomWord.toUpperCase();
@@ -176,58 +178,82 @@ export default function GameBoard() {
     return () => window.removeEventListener("keydown", handleKeys);
   }, [validateLetters, rowLength, gameOver]);
 
+  // reset board
   const handleReset = () => {
     setGameOver(false);
     setRowLength(5);
     setInputValue("");
     setWinner(false);
     setTurn(1)
-    setBoard(Array.from({ length: 5 * rowLength }, () => ({ letter: "", color: "gray-200" })))
-    availableLetters.map((letter) => {
-      letter.color = ""
-    })
+    setBoard(prev => prev.map(cell => ({
+      ...cell,
+      color: "gray-200",
+      letter: "",
+      pendingColor: "gray-200"
+    })));
+    setAvailableLetters("qwertyuiopasdfghjklzxcvbnm".split("").map(l => ({
+      letter: l,
+      color: "text-black"})));
   }
 
   return (
     <main>
-      <div className={`w-full h-[100vh] flex flex-col items-center justify-center space-y-2 absolute text-white text-4xl font-bold z-50 ${gameOver ? "final-overlay" : "opacity-0"}`}>
+      <ToastContainer 
+        position="top-center"
+        autoClose={5000} 
+        hideProgressBar={true}
+        newestOnTop={true}
+        closeOnClick={true}
+        theme="light"
+        transition={Flip}
+      />
+
+      <div className={`w-full h-[100vh] flex flex-col items-center justify-center text-center space-y-2 absolute text-white text-4xl font-bold z-50 ${gameOver ? "final-overlay block" : "opacity-0 hidden"}`}>
           {gameOver 
             ? winner 
               ? <div>You win!</div>
               : <div>Game Over. The word was {randomWord}.</div> 
             : ""}
-          <button onClick = {handleReset} className="border-2 border-white px-4 py-1 rounded-xl text-2xl cursor-pointer">Replay</button>
+          <button onClick = {handleReset} className="border-2 border-white bg-white px-4 py-1 rounded-xl text-2xl text-black cursor-pointer">Replay</button>
       </div>
-      <div className="bg-zinc-800 w-full h-20 p-2 flex items-center justify-center">
-        <img src="/wurdle-mixed.svg" className="w-35 mx-auto"/>
+      <div className="w-full pt-5 flex items-center justify-center bg-zinc-800">
+        <img src="/wurdle-new-full-2.svg" className="w-[15vw] max-w-[180px] min-w-[130px] mx-auto"/>
       </div>
-      <div className="max-w-[800px] mx-auto px-2">
-        <div className="flex flex-row items-center mt-2">
-          <h1 className="pr-2">Word Length: </h1>
-          <select 
-            value={rowLength}
-            defaultValue={5}
-            disabled={gameOver}
-            onChange={e=>setRowLength(Number(e.target.value))}>
-            <option 
-              value={3}>3
-            </option>
-            <option
-              value={4}>4
-            </option>
-            <option 
-              value={5}>5
-            </option>
-            <option
-              value={6}>6
-            </option>
-            <option
-              value={7}>7
-            </option>
-          </select>
-          
+      <div className="w-full h-10 bg-zinc-800 px-15 text-white text-lg items-center">
+        <div className="w-full max-w-[600px] flex flex-row justify-between items-center h-full mx-auto">
+          <div className="flex flex-row items-center">
+              <h1 className="pr-2">Word Length: </h1>
+              <select 
+                value={rowLength}
+                className="text-white"
+                defaultValue={5}
+                disabled={gameOver}
+                onChange={e=>{
+                  handleReset();
+                  setRowLength(Number(e.target.value));
+                }}>
+                <option 
+                  value={3}>3
+                </option>
+                <option
+                  value={4}>4
+                </option>
+                <option 
+                  value={5}>5
+                </option>
+                <option
+                  value={6}>6
+                </option>
+                <option
+                  value={7}>7
+                </option>
+              </select>
+          </div>
+          {`Turn: ${turn} / 5`}
         </div>
-        {`Turn: ${turn} / 5`}
+      </div>
+
+      <div className="max-w-[800px] mx-auto px-2">
         <div className="flex flex-row justify-center mt-5">
           <div className="grid gap-2"
             style={{ gridTemplateColumns: `repeat(${rowLength}, minmax(0, 1fr))` }}>
@@ -243,12 +269,11 @@ export default function GameBoard() {
                   ${colorMap[cell.color]}`}
               >
                 {cell.letter.toUpperCase()}
-              </div>)
-})}
+              </div>)})}
           </div>
         </div>
 
-        <div className="flex flex-col items-center mt-10">
+        <div className="flex flex-col items-center mt-7">
           {keyboardRows.map((row, rowIndex) => (
             <div key={rowIndex} className="flex">
               {row.map(letter => {
@@ -266,7 +291,7 @@ export default function GameBoard() {
                     value={letter}
                     onClick={handleClick}
                     disabled={gameOver || (letter !== "enter" && letter !== "delete" && inputValue.length >= rowLength)}
-                    className={`w-[8vw] max-w-[45px] aspect-[2/3] border border-black rounded-lg shadow-xl m-[3px] py-2 flex items-center justify-center ${letterObj?.color || ''}`
+                    className={`w-[8vw] max-w-[45px] aspect-[4/5] border border-black rounded-lg shadow-xl m-[3px] py-2 flex items-center justify-center ${letterObj?.color || ''}`
                     }
                   >
                     {letter === "delete" ? <FaDeleteLeft size={16} /> : letter === "enter" ? <AiOutlineEnter size={16} /> : letter.toUpperCase()}
