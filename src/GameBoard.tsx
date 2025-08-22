@@ -1,5 +1,5 @@
 import { generate } from "random-words";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback} from "react";
 import { FaDeleteLeft } from "react-icons/fa6";
 import { AiOutlineEnter } from "react-icons/ai";
 import { Flip, ToastContainer, toast } from "react-toastify";
@@ -29,7 +29,7 @@ export default function GameBoard() {
   const [turn, setTurn] = useState(1);
   const [availableLetters, setAvailableLetters] = useState("qwertyuiopasdfghjklzxcvbnm".split("").map(l => ({
     letter: l,
-    color: "text-black"})));
+    color: "text-black bg-white"})));
   const keyboardRows = [
     ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
     ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
@@ -38,6 +38,7 @@ export default function GameBoard() {
   const [gameOver, setGameOver] = useState(false);
   const [winner, setWinner] = useState(false);
   const [animatingRow, setAnimatingRow] = useState<number | null>(null);
+  const [pressedKey, setPressedKey] = useState< string | null>(null);
 
   useEffect(() => {
     const newWord = generate({ minLength: rowLength, maxLength: rowLength });
@@ -275,26 +276,30 @@ export default function GameBoard() {
         </div>
 
         <div className="flex flex-col items-center mt-7">
-          {keyboardRows.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex">
-              {row.map(letter => {
-                const letterObj = availableLetters.find(l => l.letter === letter);
-
-                const handleClick = () => {
-                  if (letter === "enter") validateLetters();
-                  else if (letter === "delete") setInputValue(prev => prev.slice(0, -1));
-                  else setInputValue(prev => prev.length < rowLength ? prev + letter.toUpperCase() : prev);
-                }
+            {keyboardRows.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex">
+                {row.map(letter => {
+                  const letterObj = availableLetters.find(l => l.letter === letter);
+                  const handleClick = (letter: string) => {
+                    setPressedKey(letter)
+                    if (letter === "enter") {
+                      validateLetters();
+                    }
+                    else if (letter === "delete") setInputValue(prev => prev.slice(0, -1));
+                    else setInputValue(prev => prev.length < rowLength ? prev + letter.toUpperCase() : prev);
+                    setTimeout(() => {
+                    setPressedKey(null)}, 80)
+                  };
 
                 return (
                   <button
-                    key={letter}
-                    value={letter}
-                    onClick={handleClick}
-                    disabled={gameOver || (letter !== "enter" && letter !== "delete" && inputValue.length >= rowLength)}
-                    className={`w-[8vw] max-w-[45px] aspect-[4/5] border border-black rounded-lg shadow-xl m-[3px] py-2 flex items-center justify-center ${letterObj?.color || ''}`
-                    }
-                  >
+                      key={letter}
+                      value={letter}
+                      onClick={() => handleClick(letter)}
+                      disabled={gameOver || (letter !== "enter" && letter !== "delete" && inputValue.length >= rowLength)}
+                      className={`w-[9vw] max-w-[45px] aspect-[2/3] border border-black rounded-lg shadow-xl m-[1px] md:m-[3px] py-2 flex items-center justify-center ${letterObj?.color || ''} ${pressedKey === letter ? "key-press-anim" : ""}`
+                      }
+                    >
                     {letter === "delete" ? <FaDeleteLeft size={16} /> : letter === "enter" ? <AiOutlineEnter size={16} /> : letter.toUpperCase()}
                   </button>
                 );

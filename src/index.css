@@ -41,5 +41,19 @@ body {
     top: 0;
     opacity: 1;
   }
+}
 
+.key-press-anim {
+  animation: key-press .2s ease-in-out forwards;
+}
+
+@keyframes key-press {
+
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1.2);
+  }
 }
