@@ -180,20 +180,21 @@ export default function GameBoard() {
 
   // reset board
   const handleReset = () => {
-    setGameOver(false);
     setRowLength(5);
+    setGameOver(false);
     setInputValue("");
     setWinner(false);
     setTurn(1)
-    setBoard(prev => prev.map(cell => ({
-      ...cell,
-      color: "gray-200",
+    setBoard(Array.from({ length: 5 * rowLength }, () => ({
       letter: "",
-      pendingColor: "gray-200"
-    })));
+      color: "gray-200",
+      pendingColor: undefined
+    })));    
     setAvailableLetters("qwertyuiopasdfghjklzxcvbnm".split("").map(l => ({
       letter: l,
       color: "text-black"})));
+    const newWord = generate({ minLength: 5, maxLength: 5});
+    setRandomWord(Array.isArray(newWord) ? newWord.join("") : newWord);
   }
 
   return (
