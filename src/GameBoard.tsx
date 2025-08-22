@@ -21,7 +21,7 @@ const colorMap: Record<CellColor, string>={
 
 export default function GameBoard() {
   const [rowLength, setRowLength] = useState<number>(5)
-  const [randomWord, setRandomWord] = useState<string | null>("");
+  const [randomWord, setRandomWord] = useState<string>("");
   const [board, setBoard] = useState<Cell[]>(
     Array.from({ length: 5 * rowLength }, () => ({ letter: "", color: "gray-200"}))
   )
